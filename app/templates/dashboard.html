@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>醫院交班系統 - 任務看板</title>
+    <!-- 引入 Tailwind CSS 進行現代化排版 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
+
+        .tracking-widest {
+            letter-spacing: 0.15em;
+        }
+
+        /* 美化捲軸 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Hero 區塊微動畫 */
+        .hero-card {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 h-screen flex overflow-hidden text-slate-800">
+
+    <!-- 左側導覽列 (Sidebar) -->
+    <aside class="w-64 bg-slate-900 text-slate-100 flex flex-col p-6 shadow-2xl z-10 shrink-0">
+        <div
+            class="text-2xl font-black border-b border-slate-700 text-center pb-6 mb-6 tracking-widest text-indigo-400">
+            護理站系統
+        </div>
+        <nav class="flex-1 space-y-3">
+            <a href="/tasks/dashboard"
+                class="block px-4 py-3 bg-indigo-600 rounded-xl font-medium shadow-lg shadow-indigo-500/30 transition-all">
+                跨班交接總表
+            </a>
+            <a href="/patients/"
+                class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                病人總覽頁
+            </a>
+            <a href="/nurses/ui"
+                class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                護理師總覽頁
+            </a>
+        </nav>
+
+        <!-- 顯示與排序設定 -->
+        <div class="mt-8 p-5 bg-slate-800 rounded-2xl border border-slate-700 shadow-xl">
+            <h3 class="font-bold mb-3 text-sm text-slate-300 tracking-wider text-center border-b border-slate-700 pb-2">
+                快速過濾器</h3>
+
+            <div class="mb-4 text-sm text-slate-400 border-b border-slate-700 pb-3 mt-3">
+                <div class="font-bold mb-3 text-slate-300 text-xs tracking-wider">排序方式</div>
+                <label class="flex items-center space-x-2 cursor-pointer hover:text-white mb-2">
+                    <input type="radio" name="sort-order" id="sort-time" value="time" onchange="applyFilters()"
+                        class="text-indigo-500 bg-slate-700 border-slate-600 focus:ring-0 focus:ring-offset-0">
+                    <span>依照預計執行時間排序</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer hover:text-white">
+                    <input type="radio" name="sort-order" id="sort-priority" value="priority" onchange="applyFilters()"
+                        checked class="text-indigo-500 bg-slate-700 border-slate-600 focus:ring-0 focus:ring-offset-0">
+                    <span>依照優先級排序</span>
+                </label>
+            </div>
+
+            <div class="text-sm text-slate-400">
+                <div class="font-bold mb-3 text-slate-300 text-xs tracking-wider">顯示過濾</div>
+                <label class="flex items-center space-x-2 cursor-pointer hover:text-white mb-2">
+                    <input type="checkbox" id="filter-urgent" onchange="applyFilters()"
+                        class="rounded text-indigo-500 bg-slate-700 border-slate-600 focus:ring-0 focus:ring-offset-0">
+                    <span>僅顯示最緊急任務</span>
+                </label>
+                <label class="flex items-center space-x-2 cursor-pointer hover:text-white">
+                    <input type="checkbox" id="filter-completed" onchange="applyFilters()" checked
+                        class="rounded text-indigo-500 bg-slate-700 border-slate-600 focus:ring-0 focus:ring-offset-0">
+                    <span>隱藏已完成任務</span>
+                </label>
+            </div>
+        </div>
+    </aside>
+
+    <!-- 右側主內容區 -->
+    <main class="flex-1 flex flex-col p-8 overflow-y-auto">
+
+        <!-- 頂部資訊列 -->
+        <header
+            class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 mb-8 flex justify-between items-center shrink-0">
+            <div>
+                <p class="text-xs text-slate-400 font-bold tracking-widest mb-1 uppercase">CURRENT SHIFT STATUS</p>
+                <h1 id="current-shift-status" class="text-3xl font-black tracking-widest text-slate-800">
+                    -- / -- --:--:-- <span class="text-indigo-600 ml-2">載入中...</span>
+                </h1>
+            </div>
+
+            <div class="flex items-center space-x-5">
+                <div
+                    class="bg-slate-100 text-slate-600 px-5 py-2.5 rounded-full font-bold text-sm border border-slate-200">
+                    護理師 ID：<span id="current-user-id" class="text-indigo-600">{{ current_user_id }}</span>
+                </div>
+                <button onclick="openAddModal()"
+                    class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-full font-bold shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-0.5 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                    </svg>
+                    新增護理任務
+                </button>
+            </div>
+        </header>
+
+        <!-- ==========================================
+             任務看板：還原草圖底色與卡片網格
+        ========================================== -->
+        <section class="flex-1 flex flex-col bg-slate-200/70 rounded-[2.5rem] p-8 border border-slate-200">
+            <div class="flex justify-between items-end mb-8 border-b-2 border-slate-300 pb-5">
+                <h2 class="text-2xl font-black tracking-widest text-slate-800 uppercase flex items-center">
+                    任務看板 <span class="text-slate-400 font-medium text-lg italic ml-3">Task Board</span>
+                </h2>
+                <div id="task-count-badge"
+                    class="text-xs font-black text-slate-500 bg-white/80 px-4 py-1.5 rounded-full shadow-sm">
+                    待辦總數：{{ tasks|length }} 筆
+                </div>
+            </div>
+
+            <div id="task-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                {% for task in tasks %}
+                <div class="task-card-item bg-white rounded-[1.5rem] shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 p-6 flex flex-col border border-slate-100 group relative overflow-hidden"
+                    id="task-card-{{ task.id }}" data-priority="{{ task.priority }}" data-status="{{ task.status }}"
+                    data-due-time="{{ task.due_time or '9999-12-31 23:59' }}"
+                    data-priority-score="{% if task.priority == 'High' %}1{% elif task.priority == 'Normal' %}2{% else %}3{% endif %}">
+
+                    <div
+                        class="absolute top-0 left-0 w-full h-1.5 {% if task.priority == 'High' %}bg-red-500{% elif task.priority == 'Normal' %}bg-yellow-400{% else %}bg-green-500{% endif %}">
+                    </div>
+
+                    <div class="flex justify-between items-start mb-4">
+                        <a href="/tasks/patient/{{ task.patient_id }}/details"
+                            class="font-black text-xl text-slate-800 hover:text-indigo-600 transition-colors underline decoration-dotted max-w-[70%] leading-tight">
+                            {{ task.patient_bed }} 床 <span
+                                class="text-base text-slate-500 ml-1.5 font-bold whitespace-nowrap">{{ task.patient_name
+                                }}</span>
+                        </a>
+                        <div class="flex flex-col items-end space-y-1">
+                            {% if task.category %}
+                            <span
+                                class="bg-purple-100 text-purple-700 text-[10px] font-black px-2 py-0.5 rounded tracking-wider uppercase">{{
+                                task.category }}</span>
+                            {% endif %}
+                            {% if task.priority == 'High' %}
+                            <span
+                                class="bg-red-100 text-red-600 text-[10px] font-black px-2 py-0.5 rounded-full uppercase animate-pulse">緊急</span>
+                            {% elif task.priority == 'Normal' %}
+                            <span
+                                class="bg-yellow-100 text-yellow-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">須注意</span>
+                            {% elif task.priority == 'Low' %}
+                            <span
+                                class="bg-green-100 text-green-700 text-[10px] font-black px-2 py-0.5 rounded-full uppercase">一般</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="text-slate-600 flex-1 font-bold text-sm mb-5 leading-relaxed">{{ task.content }}</div>
+
+                    {% if task.is_handed_over and task.handoff_summary %}
+                    <div
+                        class="mb-5 text-[11px] bg-amber-50 border border-amber-100 text-amber-900 p-3 rounded-xl italic">
+                        <strong>上一班交代：</strong>{{ task.handoff_summary }}
+                    </div>
+                    {% endif %}
+
+                    <div class="text-[11px] font-bold text-slate-400 flex items-center mb-6">
+                        <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        預計: {{ task.due_time if task.due_time else '無指定時間' }}
+                    </div>
+
+                    {% if task.status == 'Completed' %}
+                    <div class="flex space-x-2 mt-auto">
+                        <button disabled
+                            class="flex-1 bg-slate-200 text-slate-500 font-black py-2.5 rounded-xl cursor-not-allowed text-xs border border-slate-300">本任務已完成</button>
+                    </div>
+                    {% else %}
+                    <div class="flex space-x-2 mt-auto opacity-90 group-hover:opacity-100">
+                        <button onclick="promptComplete('{{ task.id }}')"
+                            class="flex-1 bg-emerald-50 text-emerald-600 font-black py-2.5 rounded-xl hover:bg-emerald-500 hover:text-white transition-all text-xs border border-emerald-100">完成</button>
+                        <button onclick="promptHandover('{{ task.id }}')"
+                            class="flex-1 bg-blue-50 text-blue-600 font-black py-2.5 rounded-xl hover:bg-blue-500 hover:text-white transition-all text-xs border border-blue-100">轉交</button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% else %}
+                <div class="col-span-full flex flex-col items-center justify-center py-20 text-slate-400">
+                    <p class="text-xl font-black uppercase tracking-widest">目前無待辦任務！🎉</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+    </main>
+
+    <!-- 新增任務彈出視窗 (Modal) -->
+    <div id="addTaskModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <h2 class="text-2xl font-black text-slate-800 flex items-center">➕ 新增護理任務</h2>
+                <button type="button" onclick="closeAddModal()"
+                    class="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-all">✕</button>
+            </div>
+
+            <form id="addTaskForm" onsubmit="submitNewTask(event)" class="space-y-4 text-sm font-bold">
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 病人選擇 -->
+                    <div>
+                        <label class="block text-slate-700 mb-1.5 ml-1">指定病人</label>
+                        <select id="newPatientId" required
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all appearance-none shadow-sm">
+                            <option value="" disabled selected>請選取病人...</option>
+                            {% for patient in patients %}
+                            <option value="{{ patient.id }}">{{ patient.bed_number }} 床 - {{ patient.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <!-- 記錄人員 -->
+                    <div>
+                        <label class="block text-slate-700 mb-1.5 ml-1">記錄人員</label>
+                        <select id="newCreatorId" required
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all appearance-none shadow-sm">
+                            <option value="" disabled selected>請選取人員...</option>
+                            {% for nurse in nurses %}
+                            <option value="{{ nurse.id }}" {% if current_user_id==nurse.id %}selected{% endif %}>{{
+                                nurse.name }} ({{ nurse.department }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <!-- 分類 -->
+                    <div>
+                        <label class="block text-slate-700 mb-1.5 ml-1">任務分類</label>
+                        <select id="newCategory"
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100">
+                            <option value="給藥">💊 給藥</option>
+                            <option value="檢查">🔬 檢查</option>
+                            <option value="治療">🩺 治療</option>
+                            <option value="一般照護">🛏️ 一般照護</option>
+                        </select>
+                    </div>
+                    <!-- 優先級 -->
+                    <div>
+                        <label class="block text-slate-700 mb-1.5 ml-1">優先級</label>
+                        <select id="newPriority"
+                            class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100">
+                            <option value="High">🔴 緊急</option>
+                            <option value="Normal">🟡 須注意</option>
+                            <option value="Low">🟢 一般</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 內容 -->
+                <div>
+                    <label class="block text-slate-700 mb-1.5 ml-1">任務詳細說明</label>
+                    <textarea id="newContent" required
+                        class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 resize-none shadow-sm"
+                        rows="2" placeholder="請詳細輸入..."></textarea>
+                </div>
+
+                <!-- 時間 -->
+                <div>
+                    <label class="block text-slate-700 mb-1.5 ml-1">預計執行時間</label>
+                    <input type="datetime-local" id="newDueTime"
+                        class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100">
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-4">
+                    <button type="button" onclick="closeAddModal()"
+                        class="px-6 py-3 font-black bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all">取消</button>
+                    <button type="submit"
+                        class="px-6 py-3 font-black bg-indigo-600 text-white rounded-2xl hover:bg-indigo-500 shadow-xl shadow-indigo-500/30 transition-all hover:-translate-y-1">確認新增</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 確認完成任務彈出視窗 (Modal) -->
+    <div id="completeModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl border border-slate-100 text-center">
+            <div
+                class="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">確認完成任務</h2>
+            <p class="text-slate-500 font-bold text-sm mb-6">您確認此項任務已在本班別執行完畢了嗎？<br>完成後將無法修改。</p>
+
+            <form id="completeForm" onsubmit="submitComplete(event)" class="flex justify-center space-x-3">
+                <input type="hidden" id="completeTaskId" value="">
+                <button type="button" onclick="closeCompleteModal()"
+                    class="px-6 py-3 font-black bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all w-1/2">取消</button>
+                <button type="submit"
+                    class="px-6 py-3 font-black bg-emerald-500 text-white rounded-2xl hover:bg-emerald-400 shadow-xl shadow-emerald-500/30 transition-all hover:-translate-y-1 w-1/2">確認完成</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 轉交接班彈出視窗 (Modal) -->
+    <div id="handoverModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl border border-slate-100">
+            <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+                <h2 class="text-2xl font-black text-slate-800 flex items-center">➡️ 轉交接班</h2>
+                <button type="button" onclick="closeHandoverModal()"
+                    class="text-slate-400 hover:text-red-500 bg-slate-100 hover:bg-red-50 p-2 rounded-full transition-all">✕</button>
+            </div>
+
+            <form id="handoverForm" onsubmit="submitHandover(event)" class="space-y-4 text-sm font-bold">
+                <input type="hidden" id="handoverTaskId" value="">
+
+                <!-- 交班說明 -->
+                <div>
+                    <label class="block text-slate-700 mb-1.5 ml-1">交班注意事項或進度說明</label>
+                    <textarea id="handoverSummary" required
+                        class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 resize-none shadow-sm"
+                        rows="3" placeholder="請交代下一班持續觀察..."></textarea>
+                </div>
+
+                <!-- 接班護理師選擇 -->
+                <div>
+                    <label class="block text-slate-700 mb-1.5 ml-1">接班護理師</label>
+                    <select id="handoverNextExecutor" required
+                        class="w-full bg-slate-50 border border-slate-200 text-slate-800 rounded-2xl px-4 py-3 focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all appearance-none shadow-sm">
+                        <option value="" disabled selected>請選取接班人員...</option>
+                        {% for nurse in nurses %}
+                        <option value="{{ nurse.id }}">{{ nurse.name }} ({{ nurse.department }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-4">
+                    <button type="button" onclick="closeHandoverModal()"
+                        class="px-6 py-3 font-black bg-slate-100 text-slate-600 rounded-2xl hover:bg-slate-200 transition-all">取消</button>
+                    <button type="submit"
+                        class="px-6 py-3 font-black bg-blue-500 text-white rounded-2xl hover:bg-blue-400 shadow-xl shadow-blue-500/30 transition-all hover:-translate-y-1">確認轉交</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript 邏輯：負責串接所有後端 API -->
+    <script>
+        const currentUserId = document.getElementById('current-user-id').innerText;
+
+        // API 1: 標記為完成
+        function promptComplete(taskId) {
+            document.getElementById('completeTaskId').value = taskId;
+            document.getElementById('completeModal').classList.remove('hidden');
+        }
+
+        function closeCompleteModal() {
+            document.getElementById('completeModal').classList.add('hidden');
+        }
+
+        async function submitComplete(event) {
+            event.preventDefault();
+            const taskId = document.getElementById('completeTaskId').value;
+            try {
+                const response = await fetch(`/tasks/${taskId}/status`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ executor_id: parseInt(currentUserId), status: 'Completed' })
+                });
+                if (response.ok) { location.reload(); } else { alert('更新失敗'); }
+            } catch (err) { console.error(err); }
+        }
+
+        // API 2: 處理跨班轉交
+        function promptHandover(taskId) {
+            document.getElementById('handoverTaskId').value = taskId;
+            document.getElementById('handoverSummary').value = '請交代下一班持續觀察...';
+            document.getElementById('handoverNextExecutor').value = '';
+            document.getElementById('handoverModal').classList.remove('hidden');
+        }
+
+        function closeHandoverModal() {
+            document.getElementById('handoverModal').classList.add('hidden');
+        }
+
+        async function submitHandover(event) {
+            event.preventDefault();
+            const taskId = document.getElementById('handoverTaskId').value;
+            const summary = document.getElementById('handoverSummary').value;
+            const nextExecutor = document.getElementById('handoverNextExecutor').value;
+
+            try {
+                const response = await fetch(`/tasks/${taskId}/handover`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        current_user_id: parseInt(currentUserId),
+                        action: 'handover',
+                        summary: summary,
+                        next_executor_id: parseInt(nextExecutor)
+                    })
+                });
+                if (response.ok) {
+                    location.reload();
+                } else {
+                    const err = await response.json();
+                    alert('交班處理失敗: ' + (err.error || ''));
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // UI: 開關 Modal
+        function openAddModal() { document.getElementById('addTaskModal').classList.remove('hidden'); }
+        function closeAddModal() { document.getElementById('addTaskModal').classList.add('hidden'); document.getElementById('addTaskForm').reset(); }
+
+        // API 3: 新增任務 (包含最新欄位：processing_order)
+        async function submitNewTask(event) {
+            event.preventDefault();
+            const payload = {
+                patient_id: parseInt(document.getElementById('newPatientId').value),
+                creator_id: parseInt(document.getElementById('newCreatorId').value),
+                category: document.getElementById('newCategory').value,
+                priority: document.getElementById('newPriority').value,
+                content: document.getElementById('newContent').value,
+                due_time: document.getElementById('newDueTime').value || null
+            };
+            try {
+                const response = await fetch('/tasks/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) { location.reload(); } else {
+                    const err = await response.json();
+                    alert('新增失敗: ' + (err.error || '欄位格式錯誤'));
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // 班別與時間更新邏輯
+        function updateShiftStatus() {
+            const now = new Date();
+            const month = now.getMonth() + 1;
+            const date = now.getDate();
+            const hours = now.getHours();
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            const timeString = `${String(hours).padStart(2, '0')}:${minutes}:${seconds}`;
+
+            let shiftName = "";
+            let shiftTime = "";
+
+            if (hours >= 8 && hours < 16) {
+                shiftName = "早班";
+                shiftTime = "08:00 - 16:00";
+            } else if (hours >= 16 && hours < 24) {
+                shiftName = "小夜班";
+                shiftTime = "16:00 - 00:00";
+            } else {
+                shiftName = "大夜班";
+                shiftTime = "00:00 - 08:00";
+            }
+
+            const statusEl = document.getElementById('current-shift-status');
+            if (statusEl) {
+                statusEl.innerHTML = `${month} / ${date} ${timeString} <span class="text-indigo-600 ml-2">${shiftName} ${shiftTime}</span>`;
+            }
+        }
+
+        // 過濾器與排序邏輯
+        function applyFilters() {
+            const showUrgentOnly = document.getElementById('filter-urgent').checked;
+            const hideCompleted = document.getElementById('filter-completed').checked;
+            const sortByTime = document.getElementById('sort-time').checked;
+
+            const grid = document.getElementById('task-grid');
+            if (!grid) return;
+
+            const taskCards = Array.from(grid.querySelectorAll('.task-card-item'));
+
+            let visibleCount = 0;
+
+            taskCards.forEach(card => {
+                const priority = card.getAttribute('data-priority');
+                const status = card.getAttribute('data-status');
+
+                let isVisible = true;
+
+                if (showUrgentOnly && priority !== 'High') {
+                    isVisible = false;
+                }
+
+                if (hideCompleted && status === 'Completed') {
+                    isVisible = false;
+                }
+
+                if (isVisible) {
+                    card.style.display = '';
+                    visibleCount++;
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // 處理排序
+            taskCards.sort((a, b) => {
+                const timeA = a.getAttribute('data-due-time');
+                const timeB = b.getAttribute('data-due-time');
+                const prioA = parseInt(a.getAttribute('data-priority-score')) || 9;
+                const prioB = parseInt(b.getAttribute('data-priority-score')) || 9;
+
+                if (!sortByTime) {
+                    // 若是 "依照優先級排序"，先排優先級
+                    if (prioA !== prioB) {
+                        return prioA - prioB;
+                    }
+                }
+
+                // 優先級相同，或選擇 "依照預計執行時間排序"，則排時間
+                return timeA.localeCompare(timeB);
+            });
+
+            // 重新插入DOM以套用排序
+            taskCards.forEach(card => grid.appendChild(card));
+
+            const countBadge = document.getElementById('task-count-badge');
+            if (countBadge) {
+                countBadge.innerText = `顯示總數：${visibleCount} 筆`;
+            }
+        }
+
+        // 頁面載入時套用預設過濾（隱藏已完成）
+        document.addEventListener('DOMContentLoaded', () => {
+            applyFilters();
+        });
+
+        updateShiftStatus();
+        setInterval(updateShiftStatus, 1000);
+    </script>
+</body>
+
+</html>

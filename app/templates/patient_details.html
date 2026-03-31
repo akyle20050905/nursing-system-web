@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>護理站系統 - 病人詳細任務</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+        .tracking-widest { letter-spacing: 0.15em; }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex overflow-hidden text-slate-800">
+
+    <!-- 左側導覽列 -->
+    <aside class="w-64 bg-slate-900 text-slate-100 flex flex-col p-6 shadow-2xl z-10 shrink-0">
+        <div class="text-2xl font-black border-b border-slate-700 text-center pb-6 mb-6 tracking-widest text-indigo-400">
+            護理站系統
+        </div>
+        <nav class="flex-1 space-y-3">
+            <a href="/tasks/dashboard" class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                交班總覽看板
+            </a>
+            <!-- 修正點：路徑應為 /patients/ 而非 /tasks/patients -->
+            <a href="/patients/" class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                病人總覽頁
+            </a>
+            <a href="/nurses/ui" class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                護理師管理
+            </a>
+        </nav>
+    </aside>
+
+    <!-- 右側主內容區 -->
+    <main class="flex-1 flex flex-col p-8 overflow-y-auto">
+        <header class="mb-8 border-b-2 border-slate-200 pb-4 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-black tracking-widest text-slate-800">病人任務詳細資訊</h1>
+                <p class="text-slate-400 font-bold text-sm mt-1 uppercase tracking-tighter">Detailed Nursing Tasks for Patient</p>
+            </div>
+            <div class="text-right">
+                <span class="bg-indigo-600 text-white px-4 py-1 rounded-full text-xs font-bold uppercase tracking-widest">床號 {{ patient.bed_number }}</span>
+            </div>
+        </header>
+
+        <!-- 病人基本資料摘要 -->
+        <section class="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 mb-8 flex items-center space-x-8">
+            <div class="w-20 h-20 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center text-3xl font-black">
+                {{ patient.name[0] }}
+            </div>
+            <div class="grid grid-cols-3 gap-8 flex-1">
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">姓名</p>
+                    <p class="text-xl font-black">{{ patient.name }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">病歷號</p>
+                    <p class="text-xl font-black">{{ patient.medical_id }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-slate-400 font-bold uppercase">診斷</p>
+                    <p class="text-xl font-black text-red-500">{{ patient.diagnosis or '無' }}</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 該病人的任務列表 -->
+        <h2 class="text-xl font-black mb-4 flex items-center">
+            <span class="w-2 h-6 bg-indigo-500 rounded-full mr-3"></span>
+            護理任務清單 ({{ tasks|length }})
+        </h2>
+        
+        <div class="space-y-4">
+            {% for task in tasks %}
+            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex justify-between items-center hover:border-indigo-200 transition-all">
+                <div>
+                    <div class="flex items-center space-x-3 mb-1">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {% if task.priority == 'High' %}bg-red-100 text-red-600{% else %}bg-slate-100 text-slate-500{% endif %}">
+                            {{ task.priority }}
+                        </span>
+                        <span class="text-sm font-black text-slate-800">{{ task.content }}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 font-medium">預計執行：{{ task.due_time or '無指定' }}</p>
+                </div>
+                <div class="text-right">
+                    <span class="text-xs font-bold {% if task.status == 'Completed' %}text-emerald-500{% else %}text-amber-500{% endif %}">
+                        ● {{ task.status }}
+                    </span>
+                </div>
+            </div>
+            {% else %}
+            <div class="bg-slate-100 rounded-2xl p-10 text-center text-slate-400 font-bold">
+                此病人目前無任何任務記錄
+            </div>
+            {% endfor %}
+        </div>
+    </main>
+</body>
+</html>
