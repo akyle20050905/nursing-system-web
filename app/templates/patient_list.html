@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,65 +8,106 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
-        body { font-family: 'Noto Sans TC', sans-serif; }
+
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+        }
     </style>
 </head>
+
 <body class="bg-slate-50 h-screen flex overflow-hidden text-slate-800">
 
     <!-- 左側導覽列 (與 Dashboard 一致) -->
     <aside class="w-64 bg-slate-900 text-slate-100 flex flex-col p-6 shadow-2xl z-10 shrink-0">
-        <div class="text-2xl font-black border-b border-slate-700 text-center pb-6 mb-6 tracking-widest text-indigo-400">護理站系統</div>
+        <div
+            class="text-2xl font-black border-b border-slate-700 text-center pb-6 mb-6 tracking-widest text-indigo-400">
+            護理站系統</div>
         <nav class="flex-1 space-y-3">
-            <a href="/tasks/dashboard" class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">跨班交接總表</a>
-            <a href="/patients/" class="block px-4 py-3 bg-indigo-600 rounded-xl font-medium shadow-lg shadow-indigo-500/30">病人總覽頁</a>
-            <a href="/nurses/ui" class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">護理師總覽頁</a>
+            <a href="/tasks/dashboard"
+                class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">跨班交接總表</a>
+            <a href="/patients/"
+                class="block px-4 py-3 bg-indigo-600 rounded-xl font-medium shadow-lg shadow-indigo-500/30">病人總覽頁</a>
+            <a href="/nurses/ui"
+                class="block px-4 py-3 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all">護理師總覽頁</a>
         </nav>
     </aside>
 
     <main class="flex-1 flex flex-col p-8 overflow-y-auto">
         <header class="flex justify-between items-center mb-8 border-b-2 border-slate-200 pb-4">
-            <h1 class="text-3xl font-black tracking-widest text-slate-800">全病房病人清單 <span class="text-indigo-600 text-lg">Patient List</span></h1>
-            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-full font-bold shadow-lg transition-all">
+            <h1 class="text-3xl font-black tracking-widest text-slate-800">全病房病人清單 <span
+                    class="text-indigo-600 text-lg">Patient List</span></h1>
+            <button onclick="openModal()"
+                class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-full font-bold shadow-lg transition-all">
                 ＋ 新增病人
             </button>
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
             {% for patient in patients %}
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl transition-all border-l-8 border-l-indigo-500">
+            <div
+                class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 hover:shadow-xl transition-all border-l-8 border-l-indigo-500">
                 <div class="flex justify-between items-start mb-4">
-                    <div class="bg-indigo-100 text-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center text-2xl font-black">{{ patient.bed_number }}</div>
+                    <div
+                        class="bg-indigo-100 text-indigo-600 w-30 h-16 rounded-2xl flex items-center justify-center text-2xl font-black ">
+                        {{ patient.bed_number }}</div>
                     <div class="text-right">
                         <span class="text-xs font-bold text-slate-400">ID: {{ patient.id }}</span>
-                        <h2 class="text-2xl font-black text-slate-800">{{ patient.name }}</h2>
+                        <h2 class="text-2xl font-black text-slate-800 flex items-center justify-end">
+                            {{ patient.name }}
+                            <span class="ml-2 text-sm px-2 py-1 rounded-full font-bold
+                                {% if patient.status == '穩定' %} bg-emerald-100 text-emerald-700
+                                {% elif patient.status == '觀察中' %} bg-amber-100 text-amber-700
+                                {% elif patient.status == '危急' %} bg-red-100 text-red-700
+                                {% else %} bg-slate-100 text-slate-600 {% endif %}">
+                                {{ patient.status }}
+                            </span>
+                        </h2>
                     </div>
                 </div>
                 <div class="space-y-2 mb-6 text-sm font-bold">
-                    <div class="flex justify-between"><span class="text-slate-400">性別 / 年齡</span><span>{{ patient.gender }} / {{ patient.age }} 歲</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">病歷號</span><span>{{ patient.medical_id }}</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">主診斷</span><span class="text-red-500">{{ patient.diagnosis or '尚未輸入' }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">性別 / 年齡</span><span>{{ patient.gender
+                            }} / {{ patient.age }} 歲</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">病歷號</span><span>{{ patient.medical_id
+                            }}</span></div>
+                    <div class="flex justify-between"><span class="text-slate-400">主診斷</span><span
+                            class="text-red-500">{{ patient.diagnosis or '尚未輸入' }}</span></div>
                 </div>
-                <a href="/tasks/patient/{{ patient.id }}/details" class="block w-full text-center bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-700 transition-colors">查看詳細任務</a>
+                <div class="flex space-x-2 mt-4">
+                    <button onclick="openStatusModal({{ patient.id }}, '{{ patient.name }}', '{{ patient.status }}')"
+                        class="block w-2/5 text-center bg-indigo-50 text-indigo-600 py-3 rounded-xl font-bold hover:bg-indigo-100 transition-colors text-sm">更新狀態</button>
+                    <a href="/tasks/patient/{{ patient.id }}/details"
+                        class="block w-3/5 text-center bg-slate-800 text-white py-3 rounded-xl font-bold hover:bg-slate-700 transition-colors text-sm">查看任務與歷史</a>
+                </div>
             </div>
             {% endfor %}
         </div>
     </main>
 
     <!-- 新增病人 Modal -->
-    <div id="patientModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+    <div id="patientModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
         <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
             <h2 class="text-2xl font-black mb-6">新增病人資料</h2>
             <form id="addPatientForm" onsubmit="submitPatient(event)" class="space-y-4 font-bold text-sm">
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block mb-1">姓名</label><input type="text" id="pName" required class="w-full bg-slate-50 border p-3 rounded-xl"></div>
-                    <div><label class="block mb-1">床號</label><input type="text" id="pBed" placeholder="如 701-1" required class="w-full bg-slate-50 border p-3 rounded-xl"></div>
+                    <div><label class="block mb-1">姓名</label><input type="text" id="pName" required
+                            class="w-full bg-slate-50 border p-3 rounded-xl"></div>
+                    <div><label class="block mb-1">床號</label><input type="text" id="pBed" placeholder="如 701-1" required
+                            class="w-full bg-slate-50 border p-3 rounded-xl"></div>
                 </div>
-                <div><label class="block mb-1">病歷號 (Medical ID)</label><input type="text" id="pMid" required class="w-full bg-slate-50 border p-3 rounded-xl"></div>
+                <div><label class="block mb-1">病歷號 (Medical ID)</label><input type="text" id="pMid" required
+                        class="w-full bg-slate-50 border p-3 rounded-xl"></div>
                 <div class="grid grid-cols-2 gap-4">
-                    <div><label class="block mb-1">性別</label><select id="pGender" class="w-full bg-slate-50 border p-3 rounded-xl"><option value="男">男</option><option value="女">女</option></select></div>
-                    <div><label class="block mb-1">年齡</label><input type="number" id="pAge" class="w-full bg-slate-50 border p-3 rounded-xl"></div>
+                    <div><label class="block mb-1">性別</label><select id="pGender"
+                            class="w-full bg-slate-50 border p-3 rounded-xl">
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select></div>
+                    <div><label class="block mb-1">年齡</label><input type="number" id="pAge"
+                            class="w-full bg-slate-50 border p-3 rounded-xl"></div>
                 </div>
-                <div><label class="block mb-1">初步診斷</label><input type="text" id="pDiag" class="w-full bg-slate-50 border p-3 rounded-xl"></div>
+                <div><label class="block mb-1">初步診斷</label><input type="text" id="pDiag"
+                        class="w-full bg-slate-50 border p-3 rounded-xl"></div>
                 <div class="flex justify-end space-x-3 pt-4">
                     <button type="button" onclick="closeModal()" class="px-6 py-2 bg-slate-100 rounded-xl">取消</button>
                     <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-xl">儲存</button>
@@ -74,7 +116,80 @@
         </div>
     </div>
 
+    <!-- 更新狀態 Modal -->
+    <div id="statusModal"
+        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
+        <div class="bg-white rounded-[2rem] p-8 w-full max-w-sm shadow-2xl transition-all font-sans">
+            <h2 class="text-2xl font-black mb-2 text-slate-800 flex items-center">
+                <span id="targetPatientName" class="text-indigo-600 mr-2"></span>的狀態更新
+            </h2>
+            <p class="text-xs font-bold text-slate-400 mb-6 border-b border-slate-100 pb-4">請準確評估目前的病情狀態以利後續交班追蹤。</p>
+            
+            <form id="updateStatusForm" onsubmit="submitStatus(event)" class="space-y-5 text-sm font-bold text-slate-700">
+                <input type="hidden" id="targetPatientId" value="">
+                
+                <div>
+                    <label class="block mb-2 text-xs uppercase tracking-widest text-slate-400">病人狀態 Status</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="newStatus" value="穩定" class="peer hidden" required>
+                            <div class="text-center py-3 rounded-xl border-2 border-slate-100 peer-checked:border-emerald-500 peer-checked:bg-emerald-50 peer-checked:text-emerald-700 transition-all hover:bg-slate-50">穩定</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="newStatus" value="觀察中" class="peer hidden">
+                            <div class="text-center py-3 rounded-xl border-2 border-slate-100 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 transition-all hover:bg-slate-50">觀察中</div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="newStatus" value="危急" class="peer hidden">
+                            <div class="text-center py-3 rounded-xl border-2 border-slate-100 peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-700 transition-all hover:bg-slate-50">危急</div>
+                        </label>
+                    </div>
+                </div>
+                
+                <div>
+                    <label class="block mb-2 text-xs uppercase tracking-widest text-slate-400">備註說明 Remarks</label>
+                    <textarea id="statusRemark" rows="3" class="w-full bg-slate-50 border border-slate-200 p-3 text-slate-800 rounded-xl focus:ring-4 focus:ring-indigo-100 focus:outline-none transition-all resize-none shadow-sm placeholder-slate-300" placeholder="若有血壓異常或特殊狀況請詳述..."></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4 border-t border-slate-100 mt-2">
+                    <button type="button" onclick="closeStatusModal()" class="px-6 py-3 font-black bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all">取消</button>
+                    <button type="submit" class="px-6 py-3 font-black bg-indigo-600 text-white rounded-xl hover:bg-indigo-500 shadow-lg shadow-indigo-500/30 transition-all hover:-translate-y-1">確認儲存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        function openStatusModal(id, name, currentStatus) {
+            document.getElementById('targetPatientId').value = id;
+            document.getElementById('targetPatientName').textContent = name;
+            
+            // Set radio button based on current status
+            const radios = document.getElementsByName('newStatus');
+            for(let i=0; i<radios.length; i++){
+                if(radios[i].value === currentStatus) {
+                    radios[i].checked = true;
+                }
+            }
+            document.getElementById('statusRemark').value = '';
+            document.getElementById('statusModal').classList.remove('hidden');
+        }
+        function closeStatusModal() { document.getElementById('statusModal').classList.add('hidden'); }
+        async function submitStatus(e) {
+            e.preventDefault();
+            const pId = document.getElementById('targetPatientId').value;
+            const newStatus = document.querySelector('input[name="newStatus"]:checked').value;
+            const remark = document.getElementById('statusRemark').value;
+            
+            const res = await fetch(`/patients/${pId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus, remark: remark })
+            });
+            if (res.ok) location.reload(); else alert('狀態更新失敗，請確認登入狀態');
+        }
+
+        // Existing Patient logic
         function openModal() { document.getElementById('patientModal').classList.remove('hidden'); }
         function closeModal() { document.getElementById('patientModal').classList.add('hidden'); }
         async function submitPatient(e) {
@@ -92,8 +207,9 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-            if(res.ok) location.reload(); else alert('新增失敗，請檢查病歷號是否重複');
+            if (res.ok) location.reload(); else alert('新增失敗，請檢查病歷號是否重複');
         }
     </script>
 </body>
+
 </html>
