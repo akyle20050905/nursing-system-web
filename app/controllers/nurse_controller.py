@@ -4,10 +4,10 @@ from app.models.patient import Patient
 from app.models.task import Task
 from datetime import datetime, timedelta
 
-def create_nurse(name, department, level):
+def create_nurse(name, department, level, password="123456"):
     """新增護理師"""
     try:
-        nurse = Nurse(name=name, department=department, level=level)
+        nurse = Nurse(name=name, department=department, level=level, password=password)
         db.session.add(nurse)
         db.session.commit()
         return nurse
@@ -23,6 +23,13 @@ def get_all_nurses():
 def get_nurse_by_id(nurse_id):
     """透過 ID 取得單一護理師"""
     return db.session.get(Nurse, nurse_id)
+
+def login_nurse(nurse_id, password):
+    """護理師登入驗證"""
+    nurse = db.session.get(Nurse, nurse_id)
+    if nurse and nurse.password == password:
+        return nurse
+    return None
 
 def update_nurse(nurse_id, name=None, department=None, level=None):
     """更新護理師資料"""
@@ -59,8 +66,8 @@ def seed_hospital_data():
     try:
         # 1. 檢查並植入護理師
         if Nurse.query.count() == 0:
-            n1 = Nurse(name="王小美", department="ICU", level="N2")
-            n2 = Nurse(name="陳雅婷", department="ER", level="N3")
+            n1 = Nurse(name="王小美", department="ICU", level="N2", password="123456")
+            n2 = Nurse(name="陳雅婷", department="ER", level="N3", password="123456")
             db.session.add_all([n1, n2])
             db.session.flush()
 
