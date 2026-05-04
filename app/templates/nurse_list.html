@@ -35,10 +35,7 @@
         <header class="flex justify-between items-center mb-8 border-b-2 border-slate-200 pb-4">
             <h1 class="text-3xl font-black tracking-widest text-slate-800">護理人員清單 <span
                     class="text-indigo-600 text-lg">Nurse Staff</span></h1>
-            <button onclick="openModal()"
-                class="bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-3 rounded-full font-bold shadow-lg transition-all">
-                ＋ 新增護理師
-            </button>
+
         </header>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -61,50 +58,7 @@
         </div>
     </main>
 
-    <!-- 新增護理師 Modal -->
-    <div id="nurseModal"
-        class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50">
-        <div class="bg-white rounded-[2rem] p-8 w-full max-w-md shadow-2xl">
-            <h2 class="text-2xl font-black mb-6">新增護理師</h2>
-            <form id="addNurseForm" onsubmit="submitNurse(event)" class="space-y-4 font-bold text-sm">
-                <div><label class="block mb-1">姓名</label><input type="text" id="nName" required
-                        class="w-full bg-slate-50 border p-3 rounded-xl"></div>
-                <div><label class="block mb-1">部門</label><input type="text" id="nDept" placeholder="如 ICU, ER" required
-                        class="w-full bg-slate-50 border p-3 rounded-xl"></div>
-                <div><label class="block mb-1">職級</label><select id="nLevel"
-                        class="w-full bg-slate-50 border p-3 rounded-xl">
-                        <option value="N0">N0</option>
-                        <option value="N1">N1</option>
-                        <option value="N2">N2</option>
-                        <option value="N3">N3</option>
-                        <option value="N4">N4</option>
-                    </select></div>
-                <div class="flex justify-end space-x-3 pt-4">
-                    <button type="button" onclick="closeModal()" class="px-6 py-2 bg-slate-100 rounded-xl">取消</button>
-                    <button type="submit" class="px-6 py-2 bg-indigo-600 text-white rounded-xl">儲存</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
-    <script>
-        function openModal() { document.getElementById('nurseModal').classList.remove('hidden'); }
-        function closeModal() { document.getElementById('nurseModal').classList.add('hidden'); }
-        async function submitNurse(e) {
-            e.preventDefault();
-            const payload = {
-                name: document.getElementById('nName').value,
-                department: document.getElementById('nDept').value,
-                level: document.getElementById('nLevel').value
-            };
-            const res = await fetch('/nurses/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            if (res.ok) location.reload(); else alert('新增失敗');
-        }
-    </script>
 </body>
 
 </html>
