@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify
-from app.controllers.patient_controller import get_all_patients, create_patient
+from flask import Blueprint, render_template, request, jsonify, session
+from app.controllers.patient_controller import get_all_patients, create_patient, update_patient_status
 
 # 確保 url_prefix 為 /patients
 patient_bp = Blueprint("patient_bp", __name__, url_prefix="/patients")
@@ -20,5 +20,21 @@ def add_patient_api():
         gender=data.get("gender"),
         age=data.get("age"),
         diagnosis=data.get("diagnosis")
+    )
+    return jsonify(result), status_code
+
+@patient_bp.put("/<int:patient_id>/status")
+def update_status_api(patient_id):
+    """更新病患狀態 API"""
+    data = request.get_json()
+    nurse_id = session.get("nurse_id")
+    if not nurse_id:
+        return jsonify({"error": "Unauthorized"}), 401
+        
+    result, status_code = update_patient_status(
+        patient_id=patient_id,
+        status=data.get("status"),
+        remark=data.get("remark"),
+        nurse_id=nurse_id
     )
     return jsonify(result), status_code
