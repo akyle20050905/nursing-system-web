@@ -5,11 +5,10 @@ import os
 def create_app():
     app = Flask(__name__)
     
-    
-    
-    # 配置 (優先使用環境變數 DATABASE_URL，若無則使用本地端 MySQL)
-    local_db_url = "mysql+pymysql://root:kyle0905@127.0.0.1:3306/nursing_shift"
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", local_db_url)
+    # 配置 (建議未來改用環境變數)
+    app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+pymysql://root:kyle0905@127.0.0.1:3306/nursing_shift"
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    app.config["SECRET_KEY"] = "super_secret_key_for_demo_purposes"
 
     # 初始化擴充套件
     db.init_app(app)
@@ -36,6 +35,6 @@ def create_app():
 
     @app.route("/")
     def index():
-        return redirect(url_for('task_bp.shift_dashboard'))
+        return redirect(url_for('nurse_bp.login_ui'))
 
     return app
